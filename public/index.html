@@ -653,8 +653,16 @@
     async function likePost(event, postId) {
       event.preventDefault();
       event.stopPropagation();
+      
+      // Ask for name optionally
+      const username = prompt('Your name (optional, press OK to like anonymously):', 'Anonymous');
+      
       try {
-        await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
+        await fetch(`/api/posts/${postId}/like`, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: username || 'Anonymous' })
+        });
         loadPosts(); // Refresh to show updated count
       } catch (e) {
         console.error('Like failed:', e);

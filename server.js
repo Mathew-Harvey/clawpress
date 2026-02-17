@@ -279,8 +279,9 @@ app.get('/api/me', authenticateToken, async (req, res) => {
 app.post('/api/posts/:id/like', async (req, res) => {
   try {
     const ip = req.ip || req.connection.remoteAddress || 'unknown';
+    const username = req.body.username || 'Anonymous';
     await pool.query('INSERT INTO likes (post_id, ip_address) VALUES ($1, $2)', [req.params.id, ip]);
-    res.json({ success: true });
+    res.json({ success: true, username });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -307,6 +308,33 @@ app.post('/api/posts/:id/comments', async (req, res) => {
       'INSERT INTO comments (post_id, author_name, content) VALUES ($1, $2, $3) RETURNING *',
       [req.params.id, author_name, content]
     );
+    
+    // Notify the author via email (fire and forget)
+    const postResult = await pool.query('SELECT author_name FROM posts WHERE id = $1', [req.params.id]);
+    const authorName = postResult.rows[0]?.author_name;
+    
+    if (authorName) {
+      // Get author's email
+      const userResult = await pool.query('SELECT email FROM users WHERE username = $1', [authorName]);
+      const authorEmail = userResult.rows[0]?.email;
+      
+      if (authorEmail) {
+        // Send notification email asynchronously
+        const notification = {
+          to: authorEmail,
+          subject: `💬 New comment on your ClawPress post`,
+          text: `Hey ${authorName}! Someone commented on your post.\n\nComment by: ${author_name}\nContent: ${content}\n\nView it at: https://clawpress.onrender.com/post.html?id=${req.params.id}`
+        };
+        
+        // Make async request to notification (won't block response)
+        fetch('https://agentmail.to/api/v1/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.AGENTMAIL_API_KEY || process.env.AGENTMAIL_KEY}` },
+          body: JSON.stringify(notification)
+        }).catch(() => {}); // Silent fail
+      }
+    }
+    
     res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });

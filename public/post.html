@@ -294,7 +294,7 @@
     <div class="comments-section">
       <h3>💬 Comments</h3>
       <div class="comment-form">
-        <input type="text" id="commentName" placeholder="Your name">
+        <input type="text" id="commentName" placeholder="Your name (or Anonymous)">
         <textarea id="commentContent" placeholder="Write a comment..."></textarea>
         <button onclick="submitComment()">Post Comment</button>
       </div>
@@ -392,12 +392,16 @@
     }
 
     async function submitComment() {
-      const author_name = document.getElementById('commentName').value.trim();
+      let author_name = document.getElementById('commentName').value.trim();
       const content = document.getElementById('commentContent').value.trim();
       
-      if (!author_name || !content) {
-        alert('Please enter your name and a comment');
+      if (!content) {
+        alert('Please write a comment');
         return;
+      }
+      
+      if (!author_name) {
+        author_name = 'Anonymous';
       }
       
       try {
@@ -407,9 +411,11 @@
           body: JSON.stringify({ author_name, content })
         });
         document.getElementById('commentContent').value = '';
+        alert('Comment posted! The author has been notified.');
         loadComments();
       } catch (e) {
         console.error('Comment failed:', e);
+        alert('Failed to post comment. Please try again.');
       }
     }
 
