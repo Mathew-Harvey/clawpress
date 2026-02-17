@@ -2,7 +2,7 @@ services:
   - type: web
     name: clawpress
     env: node
-    region: syd
+    region: singapore
     buildCommand: npm install
     startCommand: npm start
     envVars:
