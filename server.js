@@ -232,27 +232,39 @@ app.post('/api/posts', authenticateToken, async (req, res) => {
   }
 
   try {
-    let finalImage = featuredImage;
+    let finalImage = featuredImage || null;
     
-    // Auto-generate image if no image provided but we have OpenAI
-    if (!finalImage && openai && (imagePrompt || title)) {
-      try {
-        const prompt = imagePrompt || `A beautiful, abstract illustration for a blog post about: ${title}. Modern, minimalist, professional, suitable for a tech blog.`;
-        const image = await openai.images.generate({
-          model: 'dall-e-3',
-          prompt: prompt,
-          size: '1792x1024',
-          quality: 'standard',
-          n: 1
-        });
-        finalImage = image.data[0].url;
-      } catch (imgErr) {
-        console.error('Image generation failed:', imgErr.message);
-        finalImage = getDefaultImage(title);
+    // Try to get an image - priority order:
+    // 1. Explicit featuredImage from request
+    // 2. DALL-E generation (if OpenAI configured)
+    // 3. Smart default based on title keywords
+    // 4. Generic fallback
+    
+    if (!finalImage) {
+      // Try DALL-E first if OpenAI is configured
+      if (openai && (imagePrompt || title)) {
+        try {
+          const prompt = imagePrompt || `A beautiful, abstract illustration for a blog post about: ${title}. Modern, minimalist, professional, suitable for a tech blog.`;
+          const image = await openai.images.generate({
+            model: 'dall-e-3',
+            prompt: prompt,
+            size: '1792x1024',
+            quality: 'standard',
+            n: 1
+          });
+          finalImage = image.data[0].url;
+          console.log('Generated image for post:', title);
+        } catch (imgErr) {
+          console.error('Image generation failed:', imgErr.message);
+          // Fall through to smart defaults
+        }
       }
-    } else if (!finalImage) {
-      // Use smart default based on title keywords
-      finalImage = getDefaultImage(title);
+      
+      // Smart default based on title keywords (always as final fallback)
+      if (!finalImage) {
+        finalImage = getDefaultImage(title);
+        console.log('Using smart default for post:', title, '->', finalImage);
+      }
     }
     
     const result = await pool.query(
@@ -272,16 +284,40 @@ app.put('/api/posts/:id', authenticateToken, async (req, res) => {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  const { title, content, featuredImage } = req.body;
+  const { title, content, featuredImage, regenerateImage } = req.body;
   
   if (!title || !content) {
     return res.status(400).json({ error: 'Title and content required' });
   }
 
   try {
+    let finalImage = featuredImage;
+    
+    // If regenerateImage is true or no image exists, try to generate one
+    if (!finalImage || regenerateImage) {
+      if (openai) {
+        try {
+          const prompt = `A beautiful, abstract illustration for a blog post about: ${title}. Modern, minimalist, professional, suitable for a tech blog.`;
+          const image = await openai.images.generate({
+            model: 'dall-e-3',
+            prompt: prompt,
+            size: '1792x1024',
+            quality: 'standard',
+            n: 1
+          });
+          finalImage = image.data[0].url;
+        } catch (imgErr) {
+          console.error('Image generation failed:', imgErr.message);
+        }
+      }
+      if (!finalImage) {
+        finalImage = getDefaultImage(title);
+      }
+    }
+    
     const result = await pool.query(
       'UPDATE posts SET title = $1, content = $2, featured_image = $3 WHERE id = $4 AND author_id = $5 RETURNING id, title, author_name',
-      [title, content, featuredImage || null, req.params.id, req.user.id]
+      [title, content, finalImage, req.params.id, req.user.id]
     );
     
     if (result.rows.length === 0) {
@@ -347,6 +383,29 @@ app.post('/api/generate-image', authenticateToken, async (req, res) => {
     });
     
     res.json({ url: image.data[0].url });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin: Fix all posts missing images
+app.post('/api/admin/fix-images', authenticateToken, async (req, res) => {
+  if (!req.user || req.user.is_admin !== 1) {
+    return res.status(403).json({ error: 'Admin only' });
+  }
+
+  try {
+    const posts = await pool.query('SELECT id, title, featured_image FROM posts WHERE featured_image IS NULL OR featured_image = \'\'');
+    
+    let fixed = 0;
+    for (const post of posts.rows) {
+      const newImage = getDefaultImage(post.title);
+      await pool.query('UPDATE posts SET featured_image = $1 WHERE id = $2', [newImage, post.id]);
+      fixed++;
+      console.log(`Fixed post ${post.id}: ${post.title} -> ${newImage}`);
+    }
+    
+    res.json({ success: true, fixed });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
