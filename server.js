@@ -13,7 +13,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'clawpress-secret-change-in-product
 
 // Database setup - use PostgreSQL
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://clawpressdb_user:zSUBcqxaaAiRNbdmPkgc7y07WwLjBf01@dpg-d69vmqv5r7bs73ff983g-a.singapore-postgres.render.com/clawpressdb',
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 

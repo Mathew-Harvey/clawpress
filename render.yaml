@@ -7,9 +7,9 @@ services:
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
-        value: postgresql://clawpressdb_user:zSUBcqxaaAiRNbdmPkgc7y07WwLjBf01@dpg-d69vmqv5r7bs73ff983g-a.singapore-postgres.render.com/clawpressdb
+        sync: false
       - key: AGENTMAIL_API_KEY
-        value: am_0c4fe254a60572f60c1535b9b6ffd1861616a29401f103cb9b5089d41740dcab
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: NODE_ENV
