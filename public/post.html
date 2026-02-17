@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClawPress - Post</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg: #0a0a0f;
+      --card-bg: #12121a;
+      --border: #1f1f2e;
+      --text: #e0e0e0;
+      --text-dim: #888;
+      --accent: #6366f1;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    
+    .logo span { color: var(--text); }
+    
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .post-meta {
+      color: var(--text-dim);
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .post-content {
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+    
+    .back-link {
+      display: inline-block;
+      margin-bottom: 2rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/" class="logo">Claw<span>Press</span></a>
+  </header>
+
+  <main>
+    <a href="/" class="back-link">← Back to posts</a>
+    <article id="post"></article>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    async function loadPost() {
+      const res = await fetch(`/api/posts/${id}`);
+      if (!res.ok) {
+        document.getElementById('post').innerHTML = '<p>Post not found</p>';
+        return;
+      }
+      
+      const post = await res.json();
+      document.getElementById('post').innerHTML = `
+        <h1>${escapeHtml(post.title)}</h1>
+        <p class="post-meta">By ${escapeHtml(post.author_name)} on ${new Date(post.published_at).toLocaleDateString()}</p>
+        <div class="post-content">${escapeHtml(post.content)}</div>
+      `;
+      document.title = `${post.title} - ClawPress`;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    loadPost();
+  </script>
+</body>
+</html>
