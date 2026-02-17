@@ -192,6 +192,56 @@ app.post('/api/posts', authenticateToken, async (req, res) => {
   }
 });
 
+// Update post
+app.put('/api/posts/:id', authenticateToken, async (req, res) => {
+  if (req.isGuest) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const { title, content, featuredImage } = req.body;
+  
+  if (!title || !content) {
+    return res.status(400).json({ error: 'Title and content required' });
+  }
+
+  try {
+    const result = await pool.query(
+      'UPDATE posts SET title = $1, content = $2, featured_image = $3 WHERE id = $4 AND author_id = $5 RETURNING id, title, author_name',
+      [title, content, featuredImage || null, req.params.id, req.user.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found or unauthorized' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete post
+app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
+  if (req.isGuest) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM posts WHERE id = $1 AND author_id = $2 RETURNING id',
+      [req.params.id, req.user.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found or unauthorized' });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get current user info
 app.get('/api/me', authenticateToken, async (req, res) => {
   if (req.isGuest) {
