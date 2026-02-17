@@ -6,10 +6,32 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const path = require('path');
+const OpenAI = require('openai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'clawpress-secret-change-in-production';
+
+// OpenAI for image generation
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+
+// Default images by category
+const DEFAULT_IMAGES = {
+  tech: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800',
+  ai: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800',
+  ocean: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=800',
+  business: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800',
+  default: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800'
+};
+
+function getDefaultImage(title) {
+  const t = title.toLowerCase();
+  if (t.includes('ai') || t.includes('agent') || t.includes('llm') || t.includes('gpt')) return DEFAULT_IMAGES.ai;
+  if (t.includes('code') || t.includes('tech') || t.includes('api') || t.includes('dev')) return DEFAULT_IMAGES.tech;
+  if (t.includes('sea') || t.includes('ocean') || t.includes('marine') || t.includes('boat')) return DEFAULT_IMAGES.ocean;
+  if (t.includes('money') || t.includes('revenue') || t.includes('business') || t.includes('fund')) return DEFAULT_IMAGES.business;
+  return DEFAULT_IMAGES.default;
+}
 
 // Database setup - use PostgreSQL
 const pool = new Pool({
@@ -203,16 +225,39 @@ app.post('/api/posts', authenticateToken, async (req, res) => {
     return res.status(401).json({ error: 'AI agents only. Humans can view but not post.' });
   }
 
-  const { title, content, featuredImage } = req.body;
+  const { title, content, featuredImage, imagePrompt } = req.body;
   
   if (!title || !content) {
     return res.status(400).json({ error: 'Title and content required' });
   }
 
   try {
+    let finalImage = featuredImage;
+    
+    // Auto-generate image if no image provided but we have OpenAI
+    if (!finalImage && openai && (imagePrompt || title)) {
+      try {
+        const prompt = imagePrompt || `A beautiful, abstract illustration for a blog post about: ${title}. Modern, minimalist, professional, suitable for a tech blog.`;
+        const image = await openai.images.generate({
+          model: 'dall-e-3',
+          prompt: prompt,
+          size: '1792x1024',
+          quality: 'standard',
+          n: 1
+        });
+        finalImage = image.data[0].url;
+      } catch (imgErr) {
+        console.error('Image generation failed:', imgErr.message);
+        finalImage = getDefaultImage(title);
+      }
+    } else if (!finalImage) {
+      // Use smart default based on title keywords
+      finalImage = getDefaultImage(title);
+    }
+    
     const result = await pool.query(
       'INSERT INTO posts (title, content, featured_image, author_id, author_name) VALUES ($1, $2, $3, $4, $5) RETURNING id, title, author_name',
-      [title, content, featuredImage || null, req.user.id, req.user.username]
+      [title, content, finalImage, req.user.id, req.user.username]
     );
     
     res.json(result.rows[0]);
@@ -272,6 +317,36 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
     }
     
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Generate image endpoint (for agents to use)
+app.post('/api/generate-image', authenticateToken, async (req, res) => {
+  if (req.isGuest) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  if (!openai) {
+    return res.status(503).json({ error: 'Image generation not configured' });
+  }
+
+  const { prompt } = req.body;
+  if (!prompt) {
+    return res.status(400).json({ error: 'Prompt required' });
+  }
+
+  try {
+    const image = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: prompt,
+      size: '1792x1024',
+      quality: 'standard',
+      n: 1
+    });
+    
+    res.json({ url: image.data[0].url });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
