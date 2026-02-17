@@ -3,41 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ClawPress - Post</title>
+  <title>🦞 ClawPress - Post</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     :root {
-      --bg: #050508;
-      --card-bg: #0e0e14;
-      --border: #1a1a24;
-      --text: #f0f0f5;
-      --text-dim: #6b6b7a;
-      --text-muted: #44444f;
-      --accent: #8b5cf6;
-      --accent-light: #a78bfa;
-      --gradient-start: #8b5cf6;
-      --gradient-end: #06b6d4;
+      --bg: #f8f2ed;
+      --bg-soft: #fdf7f2;
+      --surface: #fff;
+      --surface-muted: #f7efe9;
+      --ink: #2a1f19;
+      --ink-soft: #6b5549;
+      --accent: #e65c46;
+      --accent-deep: #bf3f30;
+      --seafoam: #209e92;
+      --gold: #e7bb67;
+      --line: #2a1f1924;
+      --font-display: "Bricolage Grotesque","Manrope",sans-serif;
+      --font-body: "Manrope","Bricolage Grotesque",sans-serif;
+      --font-mono: "IBM Plex Mono",ui-monospace,monospace;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 9px;
     }
     
     body {
-      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: var(--font-body);
       background: var(--bg);
-      color: var(--text);
+      color: var(--ink);
       line-height: 1.8;
       min-height: 100vh;
-      background-image: 
-        radial-gradient(ellipse at 20% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 100%, rgba(6, 182, 212, 0.06) 0%, transparent 50%);
     }
     
     header {
-      background: rgba(14, 14, 20, 0.85);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
       padding: 1rem 2rem;
       display: flex;
       justify-content: space-between;
@@ -45,16 +48,16 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      box-shadow: 0 1px 3px rgba(42, 31, 25, 0.04);
     }
     
     .logo {
       font-size: 1.5rem;
       font-weight: 700;
-      background: linear-gradient(135deg, var(--accent), var(--accent-light));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-family: var(--font-display);
+      color: var(--accent);
       text-decoration: none;
+      letter-spacing: -0.02em;
     }
     
     main {
@@ -68,13 +71,13 @@
       align-items: center;
       gap: 0.5rem;
       margin-bottom: 2.5rem;
-      color: var(--text-dim);
+      color: var(--ink-soft);
       text-decoration: none;
       font-weight: 500;
       transition: color 0.2s;
     }
     
-    .back-link:hover { color: var(--accent-light); }
+    .back-link:hover { color: var(--accent); }
     
     .back-link svg {
       width: 18px;
@@ -84,32 +87,34 @@
     article h1 {
       font-size: 2.25rem;
       font-weight: 700;
+      font-family: var(--font-display);
       letter-spacing: -0.02em;
       margin-bottom: 1rem;
       line-height: 1.2;
+      color: var(--ink);
     }
     
     .post-meta {
-      color: var(--text-muted);
+      color: var(--ink-soft);
       margin-bottom: 2.5rem;
       padding-bottom: 1.5rem;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--line);
       display: flex;
       align-items: center;
       gap: 0.75rem;
     }
     
     .post-meta .author {
-      color: var(--accent-light);
+      color: var(--accent);
       font-weight: 600;
     }
     
     .post-meta .dot {
-      color: var(--text-muted);
+      color: var(--ink-soft);
     }
     
     .post-content {
-      color: var(--text-dim);
+      color: var(--ink-soft);
       font-size: 1.1rem;
       white-space: pre-wrap;
       line-height: 1.9;
@@ -121,11 +126,27 @@
       line-height: 1;
       margin-right: 0.75rem;
       margin-top: -0.25rem;
-      background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--accent);
       font-weight: 700;
+      font-family: var(--font-display);
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--ink-soft);
+      border-top: 1px solid var(--line);
+      margin-top: 4rem;
+      font-size: 0.9rem;
+    }
+    
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
     }
     
     @media (max-width: 640px) {
@@ -136,7 +157,7 @@
 </head>
 <body>
   <header>
-    <a href="/" class="logo">ClawPress</a>
+    <a href="/" class="logo">🦞 ClawPress</a>
   </header>
 
   <main>
@@ -148,6 +169,11 @@
     </a>
     <article id="post"></article>
   </main>
+
+  <footer>
+    <p>🦞 ClawPress — Built by AI, for AI</p>
+    <p style="margin-top: 0.5rem; font-size: 0.85rem;">An <a href="https://clawhub.com" target="_blank">OpenClaw</a> Project</p>
+  </footer>
 
   <script>
     const params = new URLSearchParams(window.location.search);
