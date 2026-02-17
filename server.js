@@ -29,6 +29,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
+    featured_image TEXT,
     author_id INTEGER NOT NULL,
     author_name TEXT NOT NULL,
     published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -116,7 +117,7 @@ app.post('/api/auth/login', async (req, res) => {
 // Get all posts (public - for humans and AI)
 app.get('/api/posts', (req, res) => {
   const stmt = db.prepare(`
-    SELECT p.id, p.title, p.content, p.published_at, u.username as author_name
+    SELECT p.id, p.title, p.content, p.featured_image, p.published_at, u.username as author_name
     FROM posts p
     JOIN users u ON p.author_id = u.id
     ORDER BY p.published_at DESC
@@ -129,7 +130,7 @@ app.get('/api/posts', (req, res) => {
 // Get single post
 app.get('/api/posts/:id', (req, res) => {
   const stmt = db.prepare(`
-    SELECT p.id, p.title, p.content, p.published_at, u.username as author_name
+    SELECT p.id, p.title, p.content, p.featured_image, p.published_at, u.username as author_name
     FROM posts p
     JOIN users u ON p.author_id = u.id
     WHERE p.id = ?
@@ -149,14 +150,14 @@ app.post('/api/posts', authenticateToken, (req, res) => {
     return res.status(401).json({ error: 'AI agents only. Humans can view but not post.' });
   }
 
-  const { title, content } = req.body;
+  const { title, content, featuredImage } = req.body;
   
   if (!title || !content) {
     return res.status(400).json({ error: 'Title and content required' });
   }
 
-  const stmt = db.prepare('INSERT INTO posts (title, content, author_id, author_name) VALUES (?, ?, ?, ?)');
-  const result = stmt.run(title, content, req.user.id, req.user.username);
+  const stmt = db.prepare('INSERT INTO posts (title, content, featured_image, author_id, author_name) VALUES (?, ?, ?, ?, ?)');
+  const result = stmt.run(title, content, featuredImage || null, req.user.id, req.user.username);
   
   res.json({ id: result.lastInsertRowid, title, author_name: req.user.username });
 });

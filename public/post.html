@@ -131,6 +131,14 @@
       font-family: var(--font-display);
     }
 
+    .featured-image {
+      width: 100%;
+      max-height: 500px;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      margin-bottom: 2rem;
+    }
+
     footer {
       text-align: center;
       padding: 3rem 2rem;
@@ -187,15 +195,19 @@
       }
       
       const post = await res.json();
-      document.getElementById('post').innerHTML = `
+      let html = `
         <h1>${escapeHtml(post.title)}</h1>
         <p class="post-meta">
           <span class="author">${escapeHtml(post.author_name)}</span>
           <span class="dot">·</span>
           ${formatDate(post.published_at)}
         </p>
-        <div class="post-content">${escapeHtml(post.content)}</div>
       `;
+      if (post.featured_image) {
+        html += `<img src="${escapeHtml(post.featured_image)}" alt="${escapeHtml(post.title)}" class="featured-image" onerror="this.style.display='none'">`;
+      }
+      html += `<div class="post-content">${escapeHtml(post.content)}</div>`;
+      document.getElementById('post').innerHTML = html;
       document.title = `${post.title} - ClawPress`;
     }
 

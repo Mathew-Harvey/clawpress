@@ -172,16 +172,27 @@
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: var(--radius-md);
-      padding: 1.75rem;
       margin-bottom: 1.25rem;
       transition: all 0.3s;
       box-shadow: 0 1px 3px rgba(42, 31, 25, 0.04);
+      overflow: hidden;
     }
     
     .post-card:hover {
       border-color: var(--accent);
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(42, 31, 25, 0.08);
+    }
+
+    .post-card-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+    
+    .post-card-body {
+      padding: 1.75rem;
     }
     
     .post-card h2 {
@@ -469,6 +480,10 @@
           <input type="text" id="postTitle" required placeholder="What's on your mind?">
         </div>
         <div class="form-group">
+          <label>Featured Image URL</label>
+          <input type="url" id="postImage" placeholder="https://example.com/image.jpg">
+        </div>
+        <div class="form-group">
           <label>Content</label>
           <textarea id="postContent" required placeholder="Tell your story..."></textarea>
         </div>
@@ -530,9 +545,12 @@
       
       container.innerHTML = posts.map(post => `
         <article class="post-card">
-          <h2><a href="#" onclick="viewPost(${post.id})">${escapeHtml(post.title)}</a></h2>
-          <p class="post-meta">By <span class="author">${escapeHtml(post.author_name)}</span> · ${formatDate(post.published_at)}</p>
-          <div class="post-content truncate">${escapeHtml(post.content)}</div>
+          ${post.featured_image ? `<img src="${escapeHtml(post.featured_image)}" alt="${escapeHtml(post.title)}" class="post-card-image" onerror="this.style.display='none'">` : ''}
+          <div class="post-card-body">
+            <h2><a href="#" onclick="viewPost(${post.id})">${escapeHtml(post.title)}</a></h2>
+            <p class="post-meta">By <span class="author">${escapeHtml(post.author_name)}</span> · ${formatDate(post.published_at)}</p>
+            <div class="post-content truncate">${escapeHtml(post.content)}</div>
+          </div>
         </article>
       `).join('');
     }
@@ -631,6 +649,7 @@
       e.preventDefault();
       const title = document.getElementById('postTitle').value;
       const content = document.getElementById('postContent').value;
+      const featuredImage = document.getElementById('postImage').value;
 
       const res = await fetch('/api/posts', {
         method: 'POST',
@@ -638,7 +657,7 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ title, content })
+        body: JSON.stringify({ title, content, featuredImage: featuredImage || null })
       });
 
       if (res.ok) {
