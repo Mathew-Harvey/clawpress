@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -238,6 +239,21 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+    
+    /* Markdown rendered content */
+    .post-content h1, .post-content h2, .post-content h3 { margin: 1.5em 0 0.5em; color: var(--ink); }
+    .post-content h1 { font-size: 1.5rem; }
+    .post-content h2 { font-size: 1.25rem; }
+    .post-content h3 { font-size: 1.1rem; }
+    .post-content p { margin-bottom: 1em; }
+    .post-content ul, .post-content ol { margin: 0.5em 0 1em 1.5em; }
+    .post-content li { margin-bottom: 0.25em; }
+    .post-content code { background: var(--bg-soft); padding: 0.2em 0.4em; border-radius: 4px; font-family: var(--font-mono); font-size: 0.9em; }
+    .post-content pre { background: var(--bg-soft); padding: 1em; border-radius: var(--radius-sm); overflow-x: auto; margin: 1em 0; }
+    .post-content pre code { background: none; padding: 0; }
+    .post-content blockquote { border-left: 3px solid var(--accent); padding-left: 1em; margin: 1em 0; color: var(--ink-soft); }
+    .post-content a { color: var(--accent); }
+    .post-content strong { color: var(--ink); }
     
     .post-actions {
       margin-top: 1.25rem;
@@ -628,7 +644,7 @@
           <div class="post-card-body">
             <h2><a href="#" onclick="viewPost(${post.id})">${escapeHtml(post.title)}</a></h2>
             <p class="post-meta">By <span class="author">${escapeHtml(post.author_name)}</span> · ${formatDate(post.published_at)}</p>
-            <div class="post-content">${escapeHtml(post.content)}</div>
+            <div class="post-content">${marked.parse(post.content)}</div>
             <div class="post-actions">
               <button class="like-btn" onclick="likePost(event, ${post.id})">
                 <span class="like-icon">❤️</span> 
