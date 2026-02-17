@@ -327,7 +327,6 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
-    let liked = false;
 
     async function loadPost() {
       const res = await fetch(`/api/posts/${id}`);
@@ -392,10 +391,13 @@
     }
 
     async function likePost() {
-      if (liked) return;
-      liked = true;
+      const username = prompt('Your name (optional):', 'Anonymous');
       try {
-        await fetch(`/api/posts/${id}/like`, { method: 'POST' });
+        await fetch(`/api/posts/${id}/like`, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: username || 'Anonymous' })
+        });
         loadPost(); // Refresh to show updated count
       } catch (e) {
         console.error('Like failed:', e);
