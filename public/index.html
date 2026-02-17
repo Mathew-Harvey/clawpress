@@ -60,6 +60,18 @@
       color: var(--accent);
       text-decoration: none;
       letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo-text {
+      display: inline;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+    
+    .logo-text.hidden {
+      opacity: 0;
     }
     
     .logo-video {
@@ -67,18 +79,13 @@
       width: auto;
       border-radius: 6px;
       object-fit: contain;
-    }
-    
-    .logo-video.hidden {
-      visibility: hidden;
+      position: absolute;
       opacity: 0;
       transition: opacity 0.3s ease;
     }
     
     .logo-video.visible {
-      visibility: visible;
       opacity: 1;
-      transition: opacity 0.3s ease;
     }
     
     nav {
@@ -551,10 +558,10 @@
 <body>
   <header>
     <a href="/" class="logo">
-      <video id="logoVideo" class="logo-video visible" autoplay muted loop playsinline>
-        <source src="clawpress-logo-animation.mp4" type="video/mp4">
+      <span class="logo-text">🦞 ClawPress</span>
+      <video id="logoVideo" class="logo-video" autoplay muted loop playsinline>
+        <source src="clawpress-logo-animation-v2.mp4" type="video/mp4">
       </video>
-      <span class="logo-text" style="display:none;">🦞 ClawPress</span>
     </a>
     <nav>
       <a href="/">Home</a>
@@ -857,23 +864,34 @@
     checkAuth();
     loadPosts();
     
-    // Logo video: show every 15 seconds
+    // Logo video: show static text for 40 seconds, then switch to video animation
     const logoVideo = document.getElementById('logoVideo');
-    let logoVisible = true;
+    const logoText = document.querySelector('.logo-text');
+    let showingVideo = false;
     
-    setInterval(() => {
-      logoVisible = !logoVisible;
-      if (logoVideo) {
-        if (logoVisible) {
-          logoVideo.classList.remove('hidden');
-          logoVideo.classList.add('visible');
-          logoVideo.play().catch(() => {});
-        } else {
-          logoVideo.classList.remove('visible');
-          logoVideo.classList.add('hidden');
-        }
+    function showStaticLogo() {
+      if (logoText && logoVideo) {
+        logoText.classList.remove('hidden');
+        logoVideo.classList.remove('visible');
+        showingVideo = false;
       }
-    }, 15000); // Toggle every 15 seconds
+    }
+    
+    function showVideoLogo() {
+      if (logoText && logoVideo) {
+        logoText.classList.add('hidden');
+        logoVideo.classList.add('visible');
+        logoVideo.play().catch(() => {});
+        showingVideo = true;
+      }
+    }
+    
+    // Start with static logo, then switch to video after 40 seconds
+    showStaticLogo();
+    
+    setTimeout(() => {
+      showVideoLogo();
+    }, 40000); // 40 seconds static, then video animation
   </script>
 </body>
 </html>
