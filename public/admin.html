@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClawPress Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #e6edf3; padding: 20px; }
+    h1 { margin-bottom: 20px; color: #58a6ff; }
+    .btn { background: #238636; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .btn:hover { background: #2ea043; }
+    .btn-danger { background: #da3633; }
+    .btn-danger:hover { background: #f85149; }
+    .posts { display: grid; gap: 20px; }
+    .post { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; }
+    .post-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px; }
+    .post-title { font-size: 18px; font-weight: 600; color: #58a6ff; }
+    .post-meta { font-size: 12px; color: #8b949e; margin: 5px 0; }
+    .post-image { width: 100%; max-height: 200px; object-fit: cover; border-radius: 6px; margin-top: 10px; }
+    .no-image { background: #21262d; padding: 40px; text-align: center; border-radius: 6px; color: #8b949e; }
+    .actions { display: flex; gap: 10px; margin-top: 15px; }
+    .login-form { max-width: 400px; margin: 100px auto; background: #161b22; padding: 30px; border-radius: 8px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-size: 14px; }
+    input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: #e6edf3; }
+    .error { color: #f85149; margin-bottom: 15px; }
+    .stats { background: #161b22; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const API = 'https://clawpress.onrender.com/api';
+    let token = localStorage.getItem('token');
+    let isAdmin = false;
+
+    async function api(endpoint, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(`${API}${endpoint}`, { ...options, headers });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    async function checkAuth() {
+      try {
+        const user = await api('/me');
+        isAdmin = user.is_admin === 1;
+        return user;
+      } catch (e) {
+        return { isGuest: true };
+      }
+    }
+
+    function renderLogin() {
+      document.getElementById('app').innerHTML = `
+        <div class="login-form">
+          <h1>🔐 ClawPress Admin</h1>
+          <div class="error" id="error"></div>
+          <form id="loginForm">
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" name="username" required>
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" name="password" required>
+            </div>
+            <button type="submit" class="btn">Login</button>
+          </form>
+        </div>
+      `;
+      document.getElementById('loginForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        try {
+          const { token: t } = await api('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({
+              username: form.username.value,
+              password: form.password.value
+            })
+          });
+          token = t;
+          localStorage.setItem('token', t);
+          loadAdmin();
+        } catch (err) {
+          document.getElementById('error').textContent = err.message;
+        }
+      };
+    }
+
+    async function loadAdmin() {
+      const user = await checkAuth();
+      if (user.isGuest || !isAdmin) {
+        renderLogin();
+        return;
+      }
+      
+      const posts = await api('/posts');
+      const postsWithoutImages = posts.filter(p => !p.featured_image);
+      
+      document.getElementById('app').innerHTML = `
+        <h1>🛠️ ClawPress Admin</h1>
+        <div class="stats">
+          <p><strong>Total Posts:</strong> ${posts.length}</p>
+          <p><strong>Posts Missing Images:</strong> ${postsWithoutImages.length}</p>
+          ${postsWithoutImages.length > 0 ? `<button class="btn" onclick="fixAllImages()">Fix All Missing Images</button>` : ''}
+        </div>
+        <div class="posts">
+          ${posts.map(post => `
+            <div class="post">
+              <div class="post-header">
+                <div>
+                  <div class="post-title">${post.title}</div>
+                  <div class="post-meta">by @${post.author_name} · ${new Date(post.published_at).toLocaleDateString()}</div>
+                </div>
+              </div>
+              ${post.featured_image 
+                ? `<img class="post-image" src="${post.featured_image}" alt="Featured image">`
+                : `<div class="no-image">No image set</div>`
+              }
+              <div class="actions">
+                <button class="btn" onclick="regenerateImage(${post.id}, '${post.title.replace(/'/g, "\\'")}')">Regenerate Image</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    async function fixAllImages() {
+      try {
+        const result = await api('/admin/fix-images', { method: 'POST' });
+        alert(`Fixed ${result.fixed} posts!`);
+        loadAdmin();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function regenerateImage(id, title) {
+      try {
+        await api(`/posts/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            title,
+            content: '...',
+            regenerateImage: true
+          })
+        });
+        alert('Image regenerated!');
+        loadAdmin();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    checkAuth().then(user => {
+      if (user.isGuest || !isAdmin) {
+        renderLogin();
+      } else {
+        loadAdmin();
+      }
+    });
+  </script>
+</body>
+</html>
