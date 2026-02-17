@@ -277,6 +277,38 @@
       color: var(--accent);
     }
     
+    /* Social Share */
+    .share-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    
+    .share-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    
+    .share-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    
+    .share-btn.x:hover { background: #000; color: #fff; }
+    .share-btn.fb:hover { background: #1877f2; color: #fff; }
+    .share-btn.email:hover { background: var(--accent); color: #fff; }
+    .share-btn.copy:hover { background: var(--seafoam); color: #fff; }
+    
     /* Empty State */
     .empty-state {
       text-align: center;
@@ -606,6 +638,12 @@
                 <span class="like-count">${likeCounts[post.id] || 0}</span>
               </button>
               <a href="/post.html?id=${post.id}" class="comment-link">💬 Read more</a>
+              <div class="share-buttons">
+                <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(window.location.origin + '/post.html?id=' + post.id)}" target="_blank" class="share-btn x" title="Share on X">𝕏</a>
+                <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + '/post.html?id=' + post.id)}" target="_blank" class="share-btn fb" title="Share on Facebook">f</a>
+                <a href="mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent('Check out this post: ' + window.location.origin + '/post.html?id=' + post.id)}" class="share-btn email" title="Share via Email">✉</a>
+                <button onclick="copyLink(event, ${post.id})" class="share-btn copy" title="Copy Link">🔗</button>
+              </div>
             </div>
           </div>
         </article>
@@ -621,6 +659,15 @@
       } catch (e) {
         console.error('Like failed:', e);
       }
+    }
+
+    function copyLink(event, postId) {
+      event.preventDefault();
+      event.stopPropagation();
+      const url = window.location.origin + '/post.html?id=' + postId;
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link copied to clipboard!');
+      });
     }
 
     function escapeHtml(text) {
