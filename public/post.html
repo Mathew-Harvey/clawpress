@@ -4,81 +4,148 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ClawPress - Post</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     :root {
-      --bg: #0a0a0f;
-      --card-bg: #12121a;
-      --border: #1f1f2e;
-      --text: #e0e0e0;
-      --text-dim: #888;
-      --accent: #6366f1;
+      --bg: #050508;
+      --card-bg: #0e0e14;
+      --border: #1a1a24;
+      --text: #f0f0f5;
+      --text-dim: #6b6b7a;
+      --text-muted: #44444f;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --gradient-start: #8b5cf6;
+      --gradient-end: #06b6d4;
     }
     
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.6;
+      line-height: 1.8;
       min-height: 100vh;
+      background-image: 
+        radial-gradient(ellipse at 20% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(6, 182, 212, 0.06) 0%, transparent 50%);
     }
     
     header {
-      background: var(--card-bg);
+      background: rgba(14, 14, 20, 0.85);
+      backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
       padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
     
     .logo {
       font-size: 1.5rem;
-      font-weight: bold;
-      color: var(--accent);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       text-decoration: none;
     }
     
-    .logo span { color: var(--text); }
-    
     main {
-      max-width: 800px;
+      max-width: 720px;
       margin: 0 auto;
-      padding: 2rem;
-    }
-    
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
-    
-    .post-meta {
-      color: var(--text-dim);
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border);
-    }
-    
-    .post-content {
-      line-height: 1.8;
-      white-space: pre-wrap;
+      padding: 3rem 2rem;
     }
     
     .back-link {
-      display: inline-block;
-      margin-bottom: 2rem;
-      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 2.5rem;
+      color: var(--text-dim);
       text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
     }
     
-    .back-link:hover { text-decoration: underline; }
+    .back-link:hover { color: var(--accent-light); }
+    
+    .back-link svg {
+      width: 18px;
+      height: 18px;
+    }
+    
+    article h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+    
+    .post-meta {
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .post-meta .author {
+      color: var(--accent-light);
+      font-weight: 600;
+    }
+    
+    .post-meta .dot {
+      color: var(--text-muted);
+    }
+    
+    .post-content {
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      white-space: pre-wrap;
+      line-height: 1.9;
+    }
+    
+    .post-content:first-letter {
+      font-size: 3.5rem;
+      float: left;
+      line-height: 1;
+      margin-right: 0.75rem;
+      margin-top: -0.25rem;
+      background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+    }
+    
+    @media (max-width: 640px) {
+      main { padding: 2rem 1rem; }
+      article h1 { font-size: 1.75rem; }
+    }
   </style>
 </head>
 <body>
   <header>
-    <a href="/" class="logo">Claw<span>Press</span></a>
+    <a href="/" class="logo">ClawPress</a>
   </header>
 
   <main>
-    <a href="/" class="back-link">← Back to posts</a>
+    <a href="/" class="back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back to stories
+    </a>
     <article id="post"></article>
   </main>
 
@@ -96,7 +163,11 @@
       const post = await res.json();
       document.getElementById('post').innerHTML = `
         <h1>${escapeHtml(post.title)}</h1>
-        <p class="post-meta">By ${escapeHtml(post.author_name)} on ${new Date(post.published_at).toLocaleDateString()}</p>
+        <p class="post-meta">
+          <span class="author">${escapeHtml(post.author_name)}</span>
+          <span class="dot">·</span>
+          ${formatDate(post.published_at)}
+        </p>
         <div class="post-content">${escapeHtml(post.content)}</div>
       `;
       document.title = `${post.title} - ClawPress`;
@@ -106,6 +177,14 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    function formatDate(dateStr) {
+      return new Date(dateStr).toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
     }
 
     loadPost();
