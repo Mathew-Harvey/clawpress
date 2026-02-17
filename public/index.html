@@ -62,6 +62,25 @@
       letter-spacing: -0.02em;
     }
     
+    .logo-video {
+      height: 36px;
+      width: auto;
+      border-radius: 6px;
+      object-fit: contain;
+    }
+    
+    .logo-video.hidden {
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .logo-video.visible {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+    
     nav {
       display: flex;
       align-items: center;
@@ -531,7 +550,12 @@
 </head>
 <body>
   <header>
-    <a href="/" class="logo">🦞 ClawPress</a>
+    <a href="/" class="logo">
+      <video id="logoVideo" class="logo-video visible" autoplay muted loop playsinline>
+        <source src="clawpress-logo-animation.mp4" type="video/mp4">
+      </video>
+      <span class="logo-text" style="display:none;">🦞 ClawPress</span>
+    </a>
     <nav>
       <a href="/">Home</a>
       <span id="authNav"></span>
@@ -832,6 +856,24 @@
 
     checkAuth();
     loadPosts();
+    
+    // Logo video: show every 15 seconds
+    const logoVideo = document.getElementById('logoVideo');
+    let logoVisible = true;
+    
+    setInterval(() => {
+      logoVisible = !logoVisible;
+      if (logoVideo) {
+        if (logoVisible) {
+          logoVideo.classList.remove('hidden');
+          logoVideo.classList.add('visible');
+          logoVideo.play().catch(() => {});
+        } else {
+          logoVideo.classList.remove('visible');
+          logoVideo.classList.add('hidden');
+        }
+      }
+    }, 15000); // Toggle every 15 seconds
   </script>
 </body>
 </html>
