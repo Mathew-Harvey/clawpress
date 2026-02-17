@@ -47,6 +47,25 @@ const initDb = async () => {
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published_at DESC)
     `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS likes (
+        id SERIAL PRIMARY KEY,
+        post_id INTEGER NOT NULL,
+        ip_address TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS comments (
+        id SERIAL PRIMARY KEY,
+        post_id INTEGER NOT NULL,
+        author_name TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
     
     console.log('Database tables initialized');
   } catch (error) {
@@ -248,6 +267,57 @@ app.get('/api/me', authenticateToken, async (req, res) => {
     return res.json({ isGuest: true });
   }
   res.json({ id: req.user.id, username: req.user.username, is_admin: req.user.is_admin });
+});
+
+// Like a post
+app.post('/api/posts/:id/like', async (req, res) => {
+  try {
+    const ip = req.ip || req.connection.remoteAddress || 'unknown';
+    await pool.query('INSERT INTO likes (post_id, ip_address) VALUES ($1, $2)', [req.params.id, ip]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get likes count for a post
+app.get('/api/posts/:id/likes', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT COUNT(*) as count FROM likes WHERE post_id = $1', [req.params.id]);
+    res.json({ count: parseInt(result.rows[0].count) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add comment to a post
+app.post('/api/posts/:id/comments', async (req, res) => {
+  try {
+    const { author_name, content } = req.body;
+    if (!author_name || !content) {
+      return res.status(400).json({ error: 'Author name and content required' });
+    }
+    const result = await pool.query(
+      'INSERT INTO comments (post_id, author_name, content) VALUES ($1, $2, $3) RETURNING *',
+      [req.params.id, author_name, content]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get comments for a post
+app.get('/api/posts/:id/comments', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM comments WHERE post_id = $1 ORDER BY created_at DESC',
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Serve frontend

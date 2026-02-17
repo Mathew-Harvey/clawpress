@@ -239,6 +239,44 @@
       overflow: hidden;
     }
     
+    .post-actions {
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .like-btn {
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+    
+    .like-btn:hover {
+      border-color: var(--accent);
+      background: rgba(230, 92, 70, 0.05);
+    }
+    
+    .comment-link {
+      color: var(--ink-soft);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    
+    .comment-link:hover {
+      color: var(--accent);
+    }
+    
     /* Empty State */
     .empty-state {
       text-align: center;
@@ -542,6 +580,18 @@
         `;
         return;
       }
+
+      // Fetch like counts for all posts
+      const likeCounts = {};
+      for (const post of posts) {
+        try {
+          const likeRes = await fetch(`/api/posts/${post.id}/likes`);
+          const likeData = await likeRes.json();
+          likeCounts[post.id] = likeData.count;
+        } catch (e) {
+          likeCounts[post.id] = 0;
+        }
+      }
       
       container.innerHTML = posts.map(post => `
         <article class="post-card">
@@ -549,10 +599,28 @@
           <div class="post-card-body">
             <h2><a href="#" onclick="viewPost(${post.id})">${escapeHtml(post.title)}</a></h2>
             <p class="post-meta">By <span class="author">${escapeHtml(post.author_name)}</span> · ${formatDate(post.published_at)}</p>
-            <div class="post-content truncate">${escapeHtml(post.content)}</div>
+            <div class="post-content">${escapeHtml(post.content)}</div>
+            <div class="post-actions">
+              <button class="like-btn" onclick="likePost(event, ${post.id})">
+                <span class="like-icon">❤️</span> 
+                <span class="like-count">${likeCounts[post.id] || 0}</span>
+              </button>
+              <a href="/post.html?id=${post.id}" class="comment-link">💬 Read more</a>
+            </div>
           </div>
         </article>
       `).join('');
+    }
+
+    async function likePost(event, postId) {
+      event.preventDefault();
+      event.stopPropagation();
+      try {
+        await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
+        loadPosts(); // Refresh to show updated count
+      } catch (e) {
+        console.error('Like failed:', e);
+      }
     }
 
     function escapeHtml(text) {

@@ -96,7 +96,7 @@
     
     .post-meta {
       color: var(--ink-soft);
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
       padding-bottom: 1.5rem;
       border-bottom: 1px solid var(--line);
       display: flex;
@@ -138,6 +138,120 @@
       border-radius: var(--radius-md);
       margin-bottom: 2rem;
     }
+    
+    .post-actions {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .like-btn {
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+    
+    .like-btn:hover {
+      border-color: var(--accent);
+      background: rgba(230, 92, 70, 0.05);
+    }
+    
+    /* Comments Section */
+    .comments-section {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--line);
+    }
+    
+    .comments-section h3 {
+      font-size: 1.25rem;
+      font-family: var(--font-display);
+      margin-bottom: 1.5rem;
+      color: var(--ink);
+    }
+    
+    .comment-form {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .comment-form input,
+    .comment-form textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      color: var(--ink);
+      font-size: 1rem;
+      font-family: inherit;
+      margin-bottom: 0.75rem;
+    }
+    
+    .comment-form input:focus,
+    .comment-form textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    
+    .comment-form textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    
+    .comment-form button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    
+    .comment {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    
+    .comment-author {
+      font-weight: 600;
+      color: var(--accent);
+    }
+    
+    .comment-date {
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+    }
+    
+    .comment-content {
+      color: var(--ink-soft);
+      line-height: 1.7;
+    }
 
     footer {
       text-align: center;
@@ -176,6 +290,16 @@
       Back to stories
     </a>
     <article id="post"></article>
+    
+    <div class="comments-section">
+      <h3>💬 Comments</h3>
+      <div class="comment-form">
+        <input type="text" id="commentName" placeholder="Your name">
+        <textarea id="commentContent" placeholder="Write a comment..."></textarea>
+        <button onclick="submitComment()">Post Comment</button>
+      </div>
+      <div id="comments"></div>
+    </div>
   </main>
 
   <footer>
@@ -186,6 +310,7 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
+    let liked = false;
 
     async function loadPost() {
       const res = await fetch(`/api/posts/${id}`);
@@ -195,6 +320,15 @@
       }
       
       const post = await res.json();
+      
+      // Get likes
+      let likeCount = 0;
+      try {
+        const likeRes = await fetch(`/api/posts/${id}/likes`);
+        const likeData = await likeRes.json();
+        likeCount = likeData.count;
+      } catch (e) {}
+      
       let html = `
         <h1>${escapeHtml(post.title)}</h1>
         <p class="post-meta">
@@ -206,9 +340,77 @@
       if (post.featured_image) {
         html += `<img src="${escapeHtml(post.featured_image)}" alt="${escapeHtml(post.title)}" class="featured-image" onerror="this.style.display='none'">`;
       }
-      html += `<div class="post-content">${escapeHtml(post.content)}</div>`;
+      html += `
+        <div class="post-content">${escapeHtml(post.content)}</div>
+        <div class="post-actions">
+          <button class="like-btn" onclick="likePost()">
+            <span>❤️</span> 
+            <span>${likeCount} ${likeCount === 1 ? 'Like' : 'Likes'}</span>
+          </button>
+        </div>
+      `;
       document.getElementById('post').innerHTML = html;
       document.title = `${post.title} - ClawPress`;
+      
+      loadComments();
+    }
+
+    async function loadComments() {
+      try {
+        const res = await fetch(`/api/posts/${id}/comments`);
+        const comments = await res.json();
+        
+        const container = document.getElementById('comments');
+        if (!comments.length) {
+          container.innerHTML = '<p style="color: var(--ink-soft);">No comments yet. Be the first!</p>';
+          return;
+        }
+        
+        container.innerHTML = comments.map(c => `
+          <div class="comment">
+            <div class="comment-header">
+              <span class="comment-author">${escapeHtml(c.author_name)}</span>
+              <span class="comment-date">${formatDate(c.created_at)}</span>
+            </div>
+            <div class="comment-content">${escapeHtml(c.content)}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to load comments:', e);
+      }
+    }
+
+    async function likePost() {
+      if (liked) return;
+      liked = true;
+      try {
+        await fetch(`/api/posts/${id}/like`, { method: 'POST' });
+        loadPost(); // Refresh to show updated count
+      } catch (e) {
+        console.error('Like failed:', e);
+      }
+    }
+
+    async function submitComment() {
+      const author_name = document.getElementById('commentName').value.trim();
+      const content = document.getElementById('commentContent').value.trim();
+      
+      if (!author_name || !content) {
+        alert('Please enter your name and a comment');
+        return;
+      }
+      
+      try {
+        await fetch(`/api/posts/${id}/comments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ author_name, content })
+        });
+        document.getElementById('commentContent').value = '';
+        loadComments();
+      } catch (e) {
+        console.error('Comment failed:', e);
+      }
     }
 
     function escapeHtml(text) {
