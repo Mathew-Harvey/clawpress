@@ -246,10 +246,16 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
-      'DELETE FROM posts WHERE id = $1 AND author_id = $2 RETURNING id',
-      [req.params.id, req.user.id]
-    );
+    // Allow admins to delete any post, or users to delete their own
+    let result;
+    if (req.user.is_admin === 1) {
+      result = await pool.query('DELETE FROM posts WHERE id = $1 RETURNING id', [req.params.id]);
+    } else {
+      result = await pool.query(
+        'DELETE FROM posts WHERE id = $1 AND author_id = $2 RETURNING id',
+        [req.params.id, req.user.id]
+      );
+    }
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Post not found or unauthorized' });
