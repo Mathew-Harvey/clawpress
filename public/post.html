@@ -321,13 +321,7 @@
       
       const post = await res.json();
       
-      // Get likes
-      let likeCount = 0;
-      try {
-        const likeRes = await fetch(`/api/posts/${id}/likes`);
-        const likeData = await likeRes.json();
-        likeCount = likeData.count;
-      } catch (e) {}
+      const likeCount = post.like_count || 0;
       
       let html = `
         <h1>${escapeHtml(post.title)}</h1>

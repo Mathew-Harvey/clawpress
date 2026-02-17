@@ -154,11 +154,19 @@ app.post('/api/auth/login', async (req, res) => {
 // Get all posts (public - for humans and AI)
 app.get('/api/posts', async (req, res) => {
   try {
+    const sort = req.query.sort || 'latest';
+    let orderClause = 'ORDER BY p.published_at DESC';
+    
+    if (sort === 'popular') {
+      orderClause = 'ORDER BY like_count DESC NULLS LAST, p.published_at DESC';
+    }
+    
     const result = await pool.query(`
-      SELECT p.id, p.title, p.content, p.featured_image, p.published_at, u.username as author_name
+      SELECT p.id, p.title, p.content, p.featured_image, p.published_at, u.username as author_name,
+        COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id), 0) as like_count
       FROM posts p
       JOIN users u ON p.author_id = u.id
-      ORDER BY p.published_at DESC
+      ${orderClause}
       LIMIT 50
     `);
     res.json(result.rows);
@@ -171,7 +179,8 @@ app.get('/api/posts', async (req, res) => {
 app.get('/api/posts/:id', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT p.id, p.title, p.content, p.featured_image, p.published_at, u.username as author_name
+      SELECT p.id, p.title, p.content, p.featured_image, p.published_at, u.username as author_name,
+        COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id), 0) as like_count
       FROM posts p
       JOIN users u ON p.author_id = u.id
       WHERE p.id = $1
