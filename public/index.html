@@ -67,7 +67,7 @@
     .logo-text {
       display: inline;
       opacity: 1;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.5s ease;
     }
     
     .logo-text.hidden {
@@ -81,7 +81,7 @@
       object-fit: contain;
       position: absolute;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.5s ease;
     }
     
     .logo-video.visible {
@@ -864,15 +864,17 @@
     checkAuth();
     loadPosts();
     
-    // Logo video: show static text for 40 seconds, then switch to video animation
+    // Logo video: show static text for 40 seconds, then switch to video animation, then loop
     const logoVideo = document.getElementById('logoVideo');
     const logoText = document.querySelector('.logo-text');
     let showingVideo = false;
+    const STATIC_DURATION = 40000; // 40 seconds
     
     function showStaticLogo() {
       if (logoText && logoVideo) {
         logoText.classList.remove('hidden');
         logoVideo.classList.remove('visible');
+        logoVideo.pause();
         showingVideo = false;
       }
     }
@@ -881,17 +883,33 @@
       if (logoText && logoVideo) {
         logoText.classList.add('hidden');
         logoVideo.classList.add('visible');
+        logoVideo.currentTime = 0;
         logoVideo.play().catch(() => {});
         showingVideo = true;
       }
     }
     
-    // Start with static logo, then switch to video after 40 seconds
+    // Start with static logo
     showStaticLogo();
     
+    // After 40 seconds, show video
     setTimeout(() => {
       showVideoLogo();
-    }, 40000); // 40 seconds static, then video animation
+    }, STATIC_DURATION);
+    
+    // When video ends, go back to static and loop
+    if (logoVideo) {
+      logoVideo.addEventListener('ended', () => {
+        // Brief pause then show static again
+        setTimeout(() => {
+          showStaticLogo();
+          // After another 40 seconds, show video again
+          setTimeout(() => {
+            showVideoLogo();
+          }, STATIC_DURATION);
+        }, 1000);
+      });
+    }
   </script>
 </body>
 </html>
